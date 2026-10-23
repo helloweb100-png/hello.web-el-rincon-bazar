@@ -721,6 +721,7 @@
             '.section-head p', '.process-lead', '.reel', '.visit-info .eyebrow', '.visit-row', '.map',
             '.g-filters', '.g-more', '.g-cta', '.visit-note', '.visit-info > .btn', '.form-card', '.faq-item', '.finale-inner > :not(h2)',
             '.footer-brand', '.footer-col', '.footer-bottom', '.manifesto .orn', '.stats li',
+            '.about .section-head .eyebrow', '.about-photo', '.fact', '.about-block', '.cycle-card', '.about-end > *',
         ].join(',');
         const items = $$(fade);
         gsap.set(items, { opacity: 0, y: 44 });

@@ -804,6 +804,110 @@ html.menu-open .nav-progress { opacity: 0; }
 }
 .stats span { display: block; margin-top: 10px; max-width: 16ch; font-size: .95rem; color: var(--ink-3); }
 
+/* ---------- 8b. QUÉ ES EL RINCÓN BAZAR ---------- */
+.about { padding-block: var(--section-y); background: var(--parchment); }
+.about .section-head h2 { font-size: clamp(2.2rem, 6.2vw, 4rem); }
+.about-grid { display: grid; gap: 40px; }
+.about-visual { position: relative; }
+.about-photo { width: min(86%, 420px); aspect-ratio: 4 / 5; box-shadow: 0 40px 60px -34px rgba(4, 30, 65, .55); }
+.about-photo img { object-position: 50% 35%; }
+
+/* Dato curioso: tarjeta azul que se monta sobre la foto */
+.fact {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: 12px;
+    width: min(100% - 12px, 380px);
+    margin: -44px 0 0 auto;
+    padding: 24px 24px 26px;
+    border-radius: var(--r-l);
+    color: rgba(255, 255, 255, .88);
+    background-color: var(--navy-900);
+    background-image: var(--lattice-gold);
+    background-size: 120px 120px;
+    box-shadow: 0 30px 50px -28px rgba(4, 30, 65, .75), 0 0 0 1px var(--gold-600);
+}
+.fact-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold-300);
+}
+.fact-label .ico { font-size: 1.45rem; }
+.fact-text {
+    font-family: var(--f-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(1.1rem, 2.4vw, 1.3rem);
+    line-height: 1.45;
+    color: #fff;
+    text-wrap: pretty;
+}
+
+.about-block { padding-block: clamp(22px, 3vw, 32px); border-top: 1px solid var(--line); }
+.about-block:first-child { padding-top: 0; border-top: 0; }
+.about-block:last-child { padding-bottom: 0; }
+.about-block h3 { font-size: clamp(1.45rem, 2.6vw, 1.85rem); }
+.about-block p { max-width: 58ch; margin-top: 12px; font-size: 1.04rem; color: var(--ink-2); text-wrap: pretty; }
+
+/* Consignación y reúso: el ciclo en cuatro pasos */
+.cycle-card {
+    position: relative;
+    margin-top: clamp(56px, 8vw, 96px);
+    padding: clamp(26px, 4vw, 48px);
+    border-radius: var(--r-l);
+    background: var(--white);
+    box-shadow: 0 40px 70px -44px rgba(4, 30, 65, .5), 0 0 0 1px rgba(189, 138, 28, .5);
+}
+.cycle-card .eyebrow { margin-bottom: 26px; }
+.cycle { display: grid; }
+.cycle li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+    padding-bottom: 28px;
+}
+.cycle li:last-child { padding-bottom: 0; }
+.cycle li:not(:last-child)::before {      /* hilo punteado que une un paso con el siguiente */
+    content: "";
+    position: absolute;
+    left: 27px; top: 62px; bottom: 6px;
+    border-left: 1.5px dashed var(--gold-600);
+}
+.cycle-ico {
+    display: grid;
+    place-items: center;
+    width: 56px; height: 56px;
+    font-size: 1.5rem;
+    border-radius: 50%;
+    color: var(--gold-400);
+    background: var(--navy-900);
+    border: 1.5px solid var(--gold-500);
+    box-shadow: 0 0 0 6px rgba(4, 30, 65, .08);
+}
+.cycle p { font-weight: 700; line-height: 1.35; color: var(--navy-900); }
+
+.about-end { display: grid; justify-items: center; gap: 22px; margin-top: clamp(56px, 8vw, 96px); text-align: center; }
+.about-invite { max-width: 44ch; font-size: 1.08rem; color: var(--ink-2); text-wrap: pretty; }
+.about-close {
+    max-width: 26ch;
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: clamp(1.6rem, 4.4vw, 2.6rem);
+    line-height: 1.2;
+    letter-spacing: -.015em;
+    color: var(--navy-900);
+    text-wrap: balance;
+}
+.about-close em { font-style: italic; color: var(--gold-700); padding-right: .04em; }
+
 /* ---------- 9. PORTAL (imagen que se abre con el scroll) ---------- */
 .portal { position: relative; background: var(--paper); }
 .portal-stage {
@@ -1703,6 +1807,15 @@ html.js .wa-float.is-visible { opacity: 1; transform: none; pointer-events: auto
     .stats li:first-child { padding-left: 0; border-left: 0; }
     .stats li { padding: 0 28px; }
 
+    .cycle { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+    .cycle li { grid-template-columns: minmax(0, 1fr); justify-items: start; align-items: start; align-content: start; gap: 18px; padding-bottom: 0; }
+    .cycle li:not(:last-child)::before {
+        left: 74px; right: -20px; top: 28px; bottom: auto;
+        border-left: 0;
+        border-top: 1.5px dashed var(--gold-600);
+    }
+    .cycle p { max-width: 20ch; }
+
     .portal-media { clip-path: inset(10% 33% 10% 33% round 999px 999px 0 0); }
     .portal-word { font-size: clamp(2.6rem, 5.4vw, 5rem); max-width: 30vw; top: 50%; bottom: auto; translate: 0 -50%; }
     .portal-word--l { left: auto; right: calc(67% + 28px); text-align: right; }
@@ -1770,6 +1883,10 @@ html.js .wa-float.is-visible { opacity: 1; transform: none; pointer-events: auto
     .float-photo--b { width: 22%; }
 
     .manifesto-text { max-width: 28ch; margin-left: clamp(0px, 8vw, 120px); }
+
+    .about-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(48px, 7vw, 110px); align-items: start; }
+    .about-visual { position: sticky; top: calc(var(--nav-h) + 28px); }
+    .about-photo { width: min(88%, 440px); }
 
     .portal-media { clip-path: inset(12% 36% 12% 36% round 999px 999px 0 0); }
     .portal-word--l { right: calc(64% + 32px); }
