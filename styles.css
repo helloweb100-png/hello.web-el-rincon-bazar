@@ -33,6 +33,8 @@
 .ph, .ph-fill { display: inline-block; font-style: normal; font-weight: normal; font-variant: normal; text-transform: none; line-height: 1; letter-spacing: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .ph { font-family: "Phosphor"; }
 .ph-fill { font-family: "Phosphor Fill"; }
+/* Íconos sueltos en SVG (glifos que no están en la fuente recortada), mismo trazo que .ph */
+.ico { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .ph.ph-arrow-right::before { content: "\e06c"; }
 .ph.ph-arrow-up-right::before { content: "\e092"; }
 .ph.ph-calendar-check::before { content: "\e712"; }
@@ -957,6 +959,217 @@ html:not(.js) .portal-word { display: none; }
 .cats-end .btn { white-space: normal; height: auto; min-height: 54px; padding-block: 14px; line-height: 1.2; }
 .cats-progress { display: none; }
 
+/* ---------- 11b. GALERÍA ---------- */
+.gallery {
+    position: relative;
+    padding-block: var(--section-y);
+    background-color: var(--parchment);
+    background-image: var(--lattice-dark);
+    background-size: 120px 120px;
+}
+.gallery .section-head { margin-bottom: clamp(26px, 4vw, 40px); }
+.gallery .section-head--center { max-width: 44rem; }
+
+/* Filtros */
+.g-filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: clamp(26px, 4vw, 44px);
+}
+.g-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: .86rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--navy-900);
+    background: transparent;
+    border: 1.5px solid var(--navy-900);
+    border-radius: var(--pill);
+    transition: background-color .3s, color .3s, scale .4s var(--ease-out);
+}
+.g-chip span {
+    min-width: 1.9em;
+    padding: 3px 7px;
+    font-size: .72rem;
+    text-align: center;
+    border-radius: var(--pill);
+    background: rgba(4, 30, 65, .1);
+    transition: background-color .3s, color .3s;
+}
+.g-chip:active { scale: .97; }
+.g-chip.is-active { color: var(--gold-200); background: var(--navy-900); }
+.g-chip.is-active span { color: var(--navy-900); background: var(--gold-400); }
+@media (hover: hover) { .g-chip:not(.is-active):hover { background: rgba(4, 30, 65, .08); } }
+
+/* Mosaico: sin JS son columnas CSS; con JS pasa a rejilla de filas de 1px cuyo "span" se calcula
+   desde la altura real de cada foto (masonry estable: al mostrar más fotos las anteriores no se mueven). */
+.g-grid { --g: 10px; --cols: 2; columns: var(--cols); column-gap: var(--g); }
+.g-item { break-inside: avoid; padding-bottom: var(--g); }
+.g-item--wide { column-span: all; }
+.g-grid.is-masonry {
+    columns: auto;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    grid-auto-rows: 1px;
+    grid-auto-flow: row dense;
+    align-items: start;
+}
+.g-grid.is-masonry .g-item--wide { grid-column: 1 / -1; }
+
+.g-link {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: 18px;
+    background: var(--parchment-2);
+    box-shadow: 0 0 0 1px rgba(189, 138, 28, .5), 0 20px 34px -24px rgba(4, 30, 65, .6);
+    cursor: zoom-in;
+}
+.g-link img { width: 100%; height: auto; transition: transform 1.2s var(--ease-out); }
+.g-link::before {                       /* velo para que la lupa se lea sobre cualquier foto */
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(2, 13, 31, 0) 55%, rgba(2, 13, 31, .5));
+    opacity: 0;
+    transition: opacity .5s;
+}
+.g-link::after {
+    content: "\e30c";                   /* ph-magnifying-glass */
+    position: absolute;
+    right: 12px; bottom: 12px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 40px; height: 40px;
+    font-family: "Phosphor";
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--navy-900);
+    background: var(--gold-300);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(.7);
+    transition: opacity .4s, transform .6s var(--ease-out);
+}
+.g-link:focus-visible::before, .g-link:focus-visible::after { opacity: 1; transform: none; }
+@media (hover: hover) {
+    .g-link:hover img { transform: scale(1.06); }
+    .g-link:hover::before { opacity: 1; }
+    .g-link:hover::after { opacity: 1; transform: none; }
+}
+
+/* Entrada: al llegar a la vista (solo con JS) y al cambiar de filtro */
+html.js .g-item {
+    opacity: 0;
+    translate: 0 28px;
+    transition: opacity .9s var(--ease-out), translate 1.1s var(--ease-out);
+}
+html.js .g-item.is-in { opacity: 1; translate: none; }
+.g-grid .g-item.g-enter { animation: g-enter .7s var(--ease-out) both; animation-delay: var(--d, 0ms); transition: none; }
+@keyframes g-enter { from { opacity: 0; translate: 0 22px; scale: .97; } to { opacity: 1; translate: none; scale: 1; } }
+
+.g-more { display: grid; justify-items: center; gap: 14px; margin-top: clamp(14px, 2.4vw, 26px); }
+.g-more [hidden] { display: none; }
+.g-count { font-size: .9rem; font-weight: 600; color: var(--ink-3); }
+
+/* Llamada final de la galería */
+.g-cta {
+    display: grid;
+    gap: 22px;
+    align-items: center;
+    margin-top: clamp(44px, 7vw, 84px);
+    padding: clamp(26px, 4vw, 44px);
+    border-radius: var(--r-l);
+    color: rgba(255, 255, 255, .86);
+    background-color: var(--navy-900);
+    background-image: var(--lattice-gold);
+    background-size: 120px 120px;
+    box-shadow: 0 40px 70px -44px rgba(4, 30, 65, .7);
+}
+.g-cta h3 { color: #fff; font-size: clamp(1.6rem, 3.4vw, 2.2rem); }
+.g-cta p { margin-top: 8px; max-width: 46ch; }
+.g-cta .btn { width: 100%; white-space: normal; height: auto; min-height: 54px; padding-block: 14px; line-height: 1.2; }
+
+/* Visor de fotos (<dialog> nativo) */
+.lightbox {
+    position: fixed;
+    inset: 0;
+    width: 100%; height: 100%;
+    max-width: none; max-height: none;
+    margin: 0; padding: 0;
+    border: 0;
+    overflow: hidden;
+    color: #fff;
+    background: transparent;
+}
+.lightbox::backdrop { background: rgba(2, 13, 31, .97); backdrop-filter: blur(8px); }
+html.lb-open { background: var(--navy-950); }   /* pinta también la franja reservada del scrollbar */
+.lightbox[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); animation: lb-in .45s var(--ease-out); }
+@keyframes lb-in { from { opacity: 0; } }
+.lightbox :focus-visible { outline-color: var(--gold-300); }
+
+.lb-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 6px max(16px, env(safe-area-inset-left));
+}
+.lb-count { font-family: var(--f-display); font-size: 1.15rem; letter-spacing: .06em; font-variant-numeric: lining-nums; color: var(--gold-200); }
+.lb-btn {
+    display: grid;
+    place-items: center;
+    width: 48px; height: 48px;
+    padding: 0;
+    color: var(--gold-200);
+    background: rgba(4, 22, 48, .72);
+    border: 1.5px solid rgba(240, 209, 127, .6);
+    border-radius: 50%;
+    transition: background-color .3s, color .3s, scale .4s var(--ease-out);
+}
+.lb-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lb-btn:active { scale: .92; }
+@media (hover: hover) { .lb-btn:hover { color: var(--navy-900); background: var(--gold-400); } }
+.lb-nav { position: absolute; top: 50%; z-index: 2; translate: 0 -50%; }
+.lb-prev { left: max(10px, env(safe-area-inset-left)); }
+.lb-next { right: max(10px, env(safe-area-inset-right)); }
+
+.lb-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 0 clamp(8px, 7vw, 96px) max(16px, env(safe-area-inset-bottom));
+    touch-action: pan-y;
+}
+.lb-fig {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    justify-items: center;
+    gap: 14px;
+    width: 100%; height: 100%;
+    margin: 0;
+}
+.lb-fig img {
+    align-self: center;
+    max-width: 100%; max-height: 100%;
+    width: auto; height: auto;
+    object-fit: contain;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px rgba(240, 209, 127, .55), 0 40px 80px -30px rgba(0, 0, 0, .85);
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.lb-fig figcaption { max-width: 60ch; min-height: 1.65em; text-align: center; font-size: .95rem; color: rgba(255, 255, 255, .84); }
+
 /* ---------- 12. CÓMO VENDER ---------- */
 .process {
     position: relative;
@@ -1224,7 +1437,8 @@ html.js .step.is-active { opacity: 1; }
     text-transform: uppercase;
     color: var(--gold-700);
 }
-.visit-row span:last-child { font-size: 1.08rem; font-weight: 500; color: var(--navy-900); }
+.visit-row span:last-child { min-width: 0; overflow-wrap: anywhere; font-size: 1.08rem; font-weight: 500; color: var(--navy-900); }
+.visit-row--mail span:last-child { font-size: clamp(.88rem, 4.4vw, 1.08rem); }   /* el correo cabe en una línea desde 320 px */
 .visit-ico {
     flex: none;
     display: grid;
@@ -1502,6 +1716,11 @@ html.js .wa-float.is-visible { opacity: 1; transform: none; pointer-events: auto
 
     .cat { width: 300px; }
 
+    .g-grid { --g: 14px; --cols: 3; }
+    .g-chip { padding: 0 18px; font-size: .9rem; }
+    .g-cta { grid-template-columns: minmax(0, 1fr) auto; gap: 40px; }
+    .g-cta .btn { width: auto; }
+
     .bento { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(210px, auto); }
     .bento-a { grid-column: 1 / 3; grid-row: 1 / 3; min-height: 0; }
     .bento-b { grid-column: 3; grid-row: 1 / 3; min-height: 0; }
@@ -1517,6 +1736,7 @@ html.js .wa-float.is-visible { opacity: 1; transform: none; pointer-events: auto
         padding: 8px 0;
         font-size: .9rem;
         font-weight: 600;
+        white-space: nowrap;
         color: var(--ink);
     }
     .nav-links a::after {
@@ -1532,6 +1752,8 @@ html.js .wa-float.is-visible { opacity: 1; transform: none; pointer-events: auto
     .nav-links a:hover::after, .nav-links a:focus-visible::after { transform: scaleX(1); }
     .burger { display: none; }
     .menu { display: none; }
+
+    .g-grid { --g: 16px; --cols: 4; }
 
     /* Hero a dos columnas */
     .hero-inner {
@@ -1596,6 +1818,12 @@ html.js .wa-float.is-visible { opacity: 1; transform: none; pointer-events: auto
 
 @media (min-width: 1280px) {
     .hero-title { font-size: 4.5rem; }
+}
+
+/* Con seis enlaces, entre 1024 y 1179 px el menú necesita un poco más de aire */
+@media (min-width: 1024px) and (max-width: 1179px) {
+    .nav-links { gap: 18px; }
+    .nav-links a { font-size: .86rem; }
 }
 
 /* ---------- 20b. TELÉFONOS PEQUEÑOS ---------- */

@@ -3,7 +3,7 @@
    1. Utilidades        5. Hero (mandala, polvo dorado, inclinación 3D)
    2. Menú y navegación 6. Secciones con scroll (GSAP + ScrollTrigger)
    3. Formulario WA     7. Cargador y arranque
-   4. FAQ y video
+   4. FAQ, video y galería
 
    Principios:
    - Sin listeners de "scroll" propios: todo el scroll va por Lenis +
@@ -246,6 +246,184 @@
             userPaused = !userPaused;
             if (userPaused) { video.pause(); paint(false); }
             else { video.play().then(() => paint(true)).catch(() => paint(false)); }
+        });
+    }
+
+    /** Galería: filtros por categoría, "Ver más", mosaico estable y visor de fotos (<dialog>). */
+    function initGallery() {
+        const grid = $('#g-grid');
+        const box = $('#lightbox');
+        if (!grid || !box) return;
+
+        const items = $$('.g-item', grid);
+        const chips = $$('.g-chip');
+        const moreBtn = $('#g-more');
+        const count = $('#g-count');
+        const LIMIT = 13;                       // fotos visibles antes de "Ver más" (con la panorámica, cierra parejo en 2, 3 y 4 columnas)
+        let filter = 'all';
+        let expanded = false;
+        let lastWidth = 0;
+        let stTimer;
+
+        const refreshSoon = () => {             // el alto de la página cambia: reubica los ScrollTrigger de abajo
+            if (!animated) return;
+            clearTimeout(stTimer);
+            stTimer = setTimeout(() => ScrollTrigger.refresh(), 250);
+        };
+        const matching = () => items.filter((el) => filter === 'all' || el.dataset.cat === filter);
+
+        /* Mosaico: cada foto ocupa tantas filas de 1px como mida (alto + separación) */
+        const layout = () => {
+            const gap = parseFloat(getComputedStyle(grid).getPropertyValue('--g')) || 0;
+            items
+                .filter((el) => !el.hidden)
+                .map((el) => [el, el.firstElementChild.getBoundingClientRect().height])
+                .forEach(([el, h]) => { el.style.gridRowEnd = `span ${Math.max(1, Math.ceil(h + gap))}`; });
+        };
+
+        /** Muestra las fotos del filtro activo (hasta LIMIT) y devuelve las que acaban de aparecer. */
+        const apply = (animate) => {
+            const list = matching();
+            const shown = new Set(expanded ? list : list.slice(0, LIMIT));
+            const entering = [];
+            items.forEach((el) => {
+                const show = shown.has(el);
+                if (el.hidden === show) { el.hidden = !show; if (show) entering.push(el); }
+            });
+            layout();
+
+            if (animate) {
+                entering.forEach((el, i) => {
+                    el.classList.remove('g-enter');
+                    el.classList.add('is-in');
+                    el.style.setProperty('--d', `${Math.min(i, 11) * 45}ms`);
+                });
+                void grid.offsetWidth;          // reinicia la animación aunque la foto ya la hubiera usado
+                entering.forEach((el) => el.classList.add('g-enter'));
+            }
+
+            count.textContent = shown.size < list.length ? `Mostrando ${shown.size} de ${list.length} fotos` : `Mostrando las ${list.length} fotos`;
+            moreBtn.hidden = shown.size >= list.length;
+            refreshSoon();
+            return entering;
+        };
+
+        grid.classList.add('is-masonry');
+        apply(false);
+
+        if ('ResizeObserver' in window) {       // cambia el nº de columnas o el ancho: recalcula alturas
+            new ResizeObserver(([entry]) => {
+                const w = Math.round(entry.contentRect.width);
+                if (w === lastWidth) return;
+                const first = lastWidth === 0;
+                lastWidth = w;
+                layout();
+                if (!first) refreshSoon();
+            }).observe(grid);
+        }
+
+        // Entrada escalonada al llegar a la vista (con "reducir movimiento" no se anima nada)
+        if (animated && 'IntersectionObserver' in window) {
+            const io = new IntersectionObserver((entries) => {
+                entries.filter((e) => e.isIntersecting).forEach((e, i) => {
+                    e.target.style.transitionDelay = `${i * 70}ms`;
+                    e.target.classList.add('is-in');
+                    io.unobserve(e.target);
+                });
+            }, { rootMargin: '0px 0px -8% 0px' });
+            items.forEach((el) => io.observe(el));
+        } else {
+            items.forEach((el) => el.classList.add('is-in'));
+        }
+
+        chips.forEach((chip) => chip.addEventListener('click', () => {
+            if (chip.dataset.filter === filter) return;
+            filter = chip.dataset.filter;
+            expanded = false;
+            chips.forEach((c) => {
+                c.classList.toggle('is-active', c === chip);
+                c.setAttribute('aria-pressed', String(c === chip));
+            });
+            apply(true);
+        }));
+
+        moreBtn.addEventListener('click', () => {
+            expanded = true;
+            const fresh = apply(true);
+            if (fresh[0]) fresh[0].firstElementChild.focus({ preventScroll: true });   // el botón desaparece: el foco pasa a la primera foto nueva
+        });
+
+        /* ----- Visor ----- */
+        const lbImg = $('#lb-img');
+        const lbCap = $('#lb-cap');
+        const lbI = $('#lb-i');
+        const lbN = $('#lb-n');
+        let seq = [];                           // todas las fotos del filtro activo (no solo las visibles)
+        let pos = 0;
+        let token = 0;
+
+        const fullOf = (el) => el.firstElementChild.href;
+        const preload = (el) => { new Image().src = fullOf(el); };
+
+        const show = (i) => {
+            pos = (i + seq.length) % seq.length;
+            const el = seq[pos];
+            const thumb = $('img', el);
+            const mine = ++token;
+            lbI.textContent = String(pos + 1);
+            lbN.textContent = String(seq.length);
+            lbCap.textContent = thumb.alt;
+            lbImg.alt = thumb.alt;
+            lbImg.src = thumb.currentSrc || thumb.src;          // la miniatura aparece al instante...
+            const big = new Image();
+            big.src = fullOf(el);
+            const paint = () => { if (mine === token && lbImg.src !== big.src) lbImg.src = big.src; };   // ...y se afina al cargar la grande
+            if (big.decode) big.decode().then(paint, paint); else big.onload = paint;
+            if (seq.length > 1) { preload(seq[(pos + 1) % seq.length]); preload(seq[(pos - 1 + seq.length) % seq.length]); }
+        };
+
+        grid.addEventListener('click', (e) => {
+            const link = e.target.closest('.g-link');
+            if (!link || typeof box.showModal !== 'function') return;     // sin <dialog>: el enlace abre la foto sola
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            seq = matching();
+            box.showModal();
+            root.style.overflow = 'hidden';
+            root.classList.add('lb-open');
+            if (lenis) lenis.stop();
+            show(Math.max(0, seq.indexOf(link.parentElement)));
+        });
+
+        box.addEventListener('close', () => {
+            root.style.overflow = '';
+            root.classList.remove('lb-open');
+            if (lenis) lenis.start();
+            token++;
+            lbImg.removeAttribute('src');
+        });
+        $('#lb-close').addEventListener('click', () => box.close());
+        $('#lb-prev').addEventListener('click', () => show(pos - 1));
+        $('#lb-next').addEventListener('click', () => show(pos + 1));
+        box.addEventListener('click', (e) => {                              // clic en el fondo cierra
+            if (!e.target.closest('#lb-img, #lb-cap, .lb-btn, .lb-count')) box.close();
+        });
+        box.addEventListener('keydown', (e) => {
+            const go = { ArrowRight: () => show(pos + 1), ArrowLeft: () => show(pos - 1), Home: () => show(0), End: () => show(seq.length - 1) }[e.key];
+            if (go) { e.preventDefault(); go(); }
+        });
+
+        // Deslizar con el dedo para cambiar de foto
+        const stage = $('.lb-stage', box);
+        let sx = 0, sy = 0, swiping = false;
+        stage.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; sx = e.clientX; sy = e.clientY; swiping = true; });
+        stage.addEventListener('pointercancel', () => { swiping = false; });
+        stage.addEventListener('pointerup', (e) => {
+            if (!swiping) return;
+            swiping = false;
+            const dx = e.clientX - sx;
+            const dy = e.clientY - sy;
+            if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) show(pos + (dx < 0 ? 1 : -1));
         });
     }
 
@@ -541,7 +719,7 @@
         // Elementos que entran con un fundido ascendente escalonado
         const fade = [
             '.section-head p', '.process-lead', '.reel', '.visit-info .eyebrow', '.visit-row', '.map',
-            '.visit-note', '.visit-info > .btn', '.form-card', '.faq-item', '.finale-inner > :not(h2)',
+            '.g-filters', '.g-more', '.g-cta', '.visit-note', '.visit-info > .btn', '.form-card', '.faq-item', '.finale-inner > :not(h2)',
             '.footer-brand', '.footer-col', '.footer-bottom', '.manifesto .orn', '.stats li',
         ].join(',');
         const items = $$(fade);
@@ -813,6 +991,7 @@
         initForm();
         initFaq();
         initReel();
+        initGallery();
         buildMandala();
         const mouse = initDust();
 
